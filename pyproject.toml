@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "an SQL-CTE linter/inspector"
 readme = "README.md"
 requires-python = ">=3.9,<3.10"
-dependencies = []
+dependencies = [
+    "sqlglot>=30.31.0",
+]
 
 [project.scripts]
 tuff = "tuff:main"

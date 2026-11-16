@@ -57,3 +57,37 @@ def test_drop_cte():
     )
 
     assert obtained.strip() == expected.strip()
+
+
+def test_cte_from_glot():
+    source = (test_data / "with-some-cte.sql").read_text()
+    expected = [
+        "CustomerSummary",
+        "CustomerTrends",
+        "EnrichedCustomers",
+        "MonthlySales",
+    ]
+
+    obtained = glot_ctes(source)
+
+    assert obtained == expected
+
+
+import sqlglot
+
+
+def glot_ctes(sql: str) -> list[str]:
+    """reads the names of all CTE at the top of the file"""
+    query = sqlglot.parse_one(sql, read="tsql")
+
+    return sorted([cte.alias_or_name for cte in query.ctes])
+
+
+def glot_uses(sql: str) -> list[str]:
+    """reads all tables/CTEs that are selected from; lets you check for what CTEs should be there"""
+    raise RuntimeError("???")
+
+
+def glot_body(sql: str) -> str:
+    """the file without the header or top-level CTEs"""
+    raise RuntimeError("???")
