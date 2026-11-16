@@ -8,7 +8,7 @@ It's really crude.
 You can invoke it with [uvx](https://docs.astral.sh/uv/guides/tools/) like this ...
 
 ```bash
-$ uvx --from git+https://codeberg.org/paintgoblin/tuff.git tuff
+uvx --from git+https://codeberg.org/paintgoblin/tuff.git tuff
 ```
 
 ## Needs
