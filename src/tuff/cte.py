@@ -41,16 +41,19 @@ def cache() -> call[[Path], CachedCTE]:
 
     @functools.cache
     def cte_cache(file: Path) -> CachedCTE:
-        full = (file).read_text()
-        body = drop_cte(full).strip()
-        uses = sorted(find_cte(full))
-        note = ""
-        for line in full.splitlines():
-            line = line.strip()
-            if not line.startswith("--"):
-                break
-            note += ("-- " + line[2:].strip()).strip() + "\n"
-        return CachedCTE(note.strip(), body, uses)
+        try:
+            full = (file).read_text()
+            body = drop_cte(full).strip()
+            uses = sorted(find_cte(full))
+            note = ""
+            for line in full.splitlines():
+                line = line.strip()
+                if not line.startswith("--"):
+                    break
+                note += ("-- " + line[2:].strip()).strip() + "\n"
+            return CachedCTE(note.strip(), body, uses)
+        except AssertionError() as ae:
+            raise RuntimeError(f'in {file=}') from ae
 
     return cte_cache
 
