@@ -46,6 +46,7 @@ $ uvx --from git+https://codeberg.org/paintgoblin/tuff.git tuff
 
 ## Want
 
+- detect queries/cte that should be in files
 - sqlfluff linting - and more?
 - sql-formatter running from python as well
 - read/save settings from .vscode file
