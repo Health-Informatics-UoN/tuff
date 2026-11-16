@@ -52,8 +52,8 @@ def cache() -> call[[Path], CachedCTE]:
                     break
                 note += ("-- " + line[2:].strip()).strip() + "\n"
             return CachedCTE(note.strip(), body, uses)
-        except AssertionError() as ae:
-            raise RuntimeError(f'in {file=}') from ae
+        except Exception as ae:
+            raise RuntimeError(f"in {file=}") from ae
 
     return cte_cache
 
@@ -77,7 +77,7 @@ def find_cte(src: str):
             continue
 
         if indent:
-            assert line.startswith(indent), f"{num}: {line=}"
+            assert line.startswith(indent), f"{num}: {line=} {indent=}"
 
             if line != (indent + ")") and line != (indent + "),"):
                 continue

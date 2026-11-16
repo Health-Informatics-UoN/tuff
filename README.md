@@ -11,6 +11,15 @@ You can invoke it with [uvx](https://docs.astral.sh/uv/guides/tools/) like this 
 uvx --from git+https://codeberg.org/paintgoblin/tuff.git tuff
 ```
 
+You can clone it and run from that as well ...
+
+```bash
+git clone https://codeberg.org/paintgoblin/tuff.git ~/Documents/tuff
+
+uv --project ~/Documents/tuff run tuff
+```
+
+
 ## Needs
 
 It needs to be run from a dir with `sql/` in it, and it needs [`npx`](https://nodejs.org/en/download) and [`uv`](https://docs.astral.sh/uv/getting-started/installation/) installed.
