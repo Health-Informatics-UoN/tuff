@@ -14,7 +14,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with tuff.  If not, see <https://www.gnu.org/licenses/>.
 
-from .entry import main
+import sys
+from pathlib import Path
+
+from .entry import launch
+
+
+def main():
+    launch(Path.cwd(), sys.argv[1:])
+
 
 __all__ = [  # noqa: PLE0604
     main,

@@ -34,9 +34,6 @@ class Config:
 
     cache: call[[Path], cte.CachedCTE]
 
-    # use kdiff instead of code's diff
-    kdiff: bool = False
-
     # -no-npx; don't invoke the npx steps (and save time)
     no_npx: bool = False
 
@@ -69,9 +66,8 @@ class Config:
         print(name + full + "\n")
 
 
-def main():
+def launch(cwd: Path, args: list[str]):
 
-    cwd = Path.cwd()
     if not (cwd / "sql").is_dir():
         sys.exit(f"no sql/ --> {cwd} <")
 
@@ -84,17 +80,15 @@ def main():
     if 0 == len(list((cwd / "sql").glob("*.sql"))):
         sys.exit(f"no sql/*.sql in --> {cwd} <")
 
-    args = sys.argv[1:]
     config = Config(cwd, cte.cache())
 
-    config.kdiff = take_arg(args, "-kdiff")
     config.no_npx = take_arg(args, "-no-npx")
     config.auto_strip = take_arg(args, "-auto-strip")
     config.auto_comment = take_arg(args, "-auto-comment")
 
     unknown = [arg for arg in args if arg.startswith("-")]
     if unknown:
-        sys.exit(f"unknown parameters {unknown=}")
+        sys.exit(f"parameters {unknown=}")
 
     if args == []:
         diff(config)
@@ -189,10 +183,7 @@ def diff(config: Config) -> None:
         temp.write_text(good)
 
         # just use vscode's diff
-        if not config.kdiff:
-            code_diff(temp, src)
-        elif kdiff(temp, src):
-            config.cache.cache_clear()
+        code_diff(temp, src)
 
     print("== sql checks complete - now checking usage\n")
 
@@ -251,19 +242,6 @@ def code_diff(expect: Path, actual: Path):
         ["code", "-d", expect, actual],
         check=True,
     )
-
-
-def kdiff(expect: Path, actual: Path) -> bool:
-    """run kdiff to merge the expected into the actual. returns false if you (exit) kdiff"""
-
-    r = subprocess.run(
-        ["kdiff3", "-m", expect, actual, "-o", actual], check=False
-    ).returncode
-
-    orig = actual.parent / (actual.name + ".orig")
-    if orig.exists():
-        orig.delete()
-    return r == 0
 
 
 def build(config, seen: list[str], need: list[str]):
