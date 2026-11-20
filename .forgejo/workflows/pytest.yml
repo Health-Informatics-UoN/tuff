@@ -1,0 +1,25 @@
+# ====
+# 2026-11-20
+# uv pytest
+# ---
+name: uv pytest
+on:
+  push:
+    branches:
+      - "*"
+jobs:
+  build:
+    runs-on: mini3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: uv version
+        uses: ./.forgejo/uv-forgejo
+        with:
+          command: uv --version
+
+      - name: uv pytest
+        uses: ./.forgejo/uv-forgejo
+        with:
+          command: uv run pytest
