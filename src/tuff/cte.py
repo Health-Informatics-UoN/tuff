@@ -21,6 +21,7 @@ import re
 from collections.abc import Callable as call
 from dataclasses import dataclass
 from pathlib import Path
+import sqlglot
 
 
 @dataclass(frozen=True)
@@ -59,44 +60,9 @@ def cache() -> call[[Path], CachedCTE]:
 
 
 def find_cte(src: str):
-    in_with = False
-    indent = None
-
-    for num, line in enumerate(src.splitlines()):
-        if "--" in line:
-            line = line[: line.find("--")]
-
-        if line == "WITH":
-            in_with = True
-            continue
-
-        if line == "SELECT" or line == "SELECT DISTINCT":
-            return
-
-        if not in_with or not line.strip():
-            continue
-
-        if indent:
-            assert line.startswith(indent), f"{num}: {line=} {indent=}"
-
-            if line != (indent + ")") and line != (indent + "),"):
-                continue
-            indent = None
-            continue
-
-        chop = line.strip()
-        chop = re.sub(r"\s+", " ", chop)
-        chop = chop.strip()
-
-        if (line != chop) and chop.endswith(" AS ("):
-            name = chop.removesuffix(" AS (").strip()
-
-            indent = line.removesuffix(f"{name} AS (")
-
-            yield name
-            continue
-
-        raise RuntimeError(f"Unhandled case {line=}")
+    yield from sorted(
+        [cte.alias_or_name for cte in sqlglot.parse_one(src, read="tsql").ctes]
+    )
 
 
 def drop_cte(src) -> str:

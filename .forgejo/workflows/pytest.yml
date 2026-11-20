@@ -24,9 +24,9 @@ jobs:
         with:
           command: uv run pytest
 
-      - name: require 45% coverage
+      - name: require 59% coverage
         uses: ./.forgejo/uv-forgejo
         with:
           command: |
             uv run coverage run -m pytest
-            uv run coverage report --fail-under 45
+            uv run coverage report --fail-under 59%

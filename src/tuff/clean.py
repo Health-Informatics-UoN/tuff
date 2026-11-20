@@ -31,8 +31,6 @@ def default_format(config, sql: str) -> str:
     else:
         sql = npx_sql_formatter(sql)
 
-    # sql = re_indent_4_to_2(sql)
-
     sql = sql.strip() + "\n"
 
     return sql
@@ -93,17 +91,3 @@ def _npx_external(input: str, *cmd: str):
         ).stdout.strip()
         + "\n"
     )
-
-
-def re_indent_4_to_2(src: str) -> str:
-    import re
-
-    while True:
-        out = re.sub(r"(\n\t*)    ", r"\1\t", src)
-
-        if src == out:
-            break
-        else:
-            print("redent >>>")
-            src = out
-    return out.replace("\t", "  ")

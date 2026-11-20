@@ -204,10 +204,10 @@ import textwrap
 expected_header = (
     textwrap.dedent(
         """
---
--->> this is the expected version of the file <<--
---
-"""
+        --
+        -->> this is the expected version of the file <<--
+        --
+        """
     ).strip()
     + "\n"
 )

@@ -16,7 +16,7 @@
 
 import textwrap
 from pathlib import Path
-
+import pytest
 from tuff import cte
 
 test_data = Path(__file__).parent / "test_data" / __name__
@@ -24,12 +24,14 @@ test_data = Path(__file__).parent / "test_data" / __name__
 
 def test_cte_names():
     obtained = list(cte.find_cte((test_data / "with-some-cte.sql").read_text()))
-    expected = [
-        "MonthlySales",
-        "CustomerTrends",
-        "CustomerSummary",
-        "EnrichedCustomers",
-    ]
+    expected = sorted(
+        [
+            "MonthlySales",
+            "CustomerTrends",
+            "CustomerSummary",
+            "EnrichedCustomers",
+        ]
+    )
 
     assert obtained == expected
 
@@ -59,28 +61,45 @@ def test_drop_cte():
     assert obtained.strip() == expected.strip()
 
 
-def test_cte_from_glot():
-    source = (test_data / "with-some-cte.sql").read_text()
-    expected = [
+def test_cache(tmp_path):
+    file = tmp_path / "query.sql"
+    file.write_text((test_data / "with-some-cte.sql").read_text())
+
+    cache = cte.cache()
+
+    val = cache(file)
+
+    assert val.note == ""
+    assert val.uses == [
         "CustomerSummary",
         "CustomerTrends",
         "EnrichedCustomers",
         "MonthlySales",
     ]
 
-    obtained = glot_ctes(source)
+    file.unlink()
 
-    assert obtained == expected
+    assert not file.is_file()
+
+    val = cache(file)
+
+    assert val.note == ""
+    assert val.uses == [
+        "CustomerSummary",
+        "CustomerTrends",
+        "EnrichedCustomers",
+        "MonthlySales",
+    ]
+
+    cache.cache_clear()
+
+    with pytest.raises(RuntimeError) as re:
+        val = cache(file)
+
+    assert f"in {file=}" == str(re.value)
 
 
 import sqlglot
-
-
-def glot_ctes(sql: str) -> list[str]:
-    """reads the names of all CTE at the top of the file"""
-    query = sqlglot.parse_one(sql, read="tsql")
-
-    return sorted([cte.alias_or_name for cte in query.ctes])
 
 
 def glot_uses(sql: str) -> list[str]:
