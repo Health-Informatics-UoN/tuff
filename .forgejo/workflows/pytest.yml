@@ -14,10 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: uv version
+      - name: tool versions
         uses: ./.forgejo/uv-forgejo
         with:
-          command: uv --version
+          command: |
+            uv --version
+            node -v
+            npx -v
 
       - name: uv pytest
         uses: ./.forgejo/uv-forgejo
