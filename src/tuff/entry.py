@@ -23,6 +23,7 @@ import subprocess
 import sys
 from collections.abc import Callable as call
 from dataclasses import dataclass, field
+from functools import cache
 from pathlib import Path
 
 from tuff import clean, cte
@@ -118,7 +119,17 @@ def diff(config: Config) -> None:
     todo += sorted(each for each in (config.root / "sql/cte").glob("*.sql"))
     todo += sorted(each for each in (config.root / "sql/").glob("*.sql"))
 
+    @cache
+    def read_cte(src: Path) -> tuple[cte.CTE, ...]:
+        raise RuntimeError("???")
+
+    @cache
+    def sql_body(src: Path) -> cte.CTE:
+        raise RuntimeError("???")
+
     for src in todo:
+        # TODO
+
         # so we split up the query into;
         # - note; leading comment block
         # - uses; names of any/all CTE

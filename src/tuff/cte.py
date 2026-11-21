@@ -122,14 +122,21 @@ def drop_cte(src) -> str:
 
 
 @dataclass(frozen=True)
-class CTE:
-    name: str
-    node: str | None
+class SQL:
+    note: str | None
     body: str
     uses: tuple[str, ...]
 
 
-def extract_ctes(sql: str) -> gen[CTE]:
+@dataclass(frozen=True)
+class CTE:
+    name: str
+    note: str | None
+    body: str
+    uses: tuple[str, ...]
+
+
+def glot_ctes(sql: str) -> gen[CTE]:
     with_clause = sqlglot.parse_one(sql, read="tsql").args.get("with_")
 
     if isinstance(with_clause, sqlglot.exp.With):
@@ -157,3 +164,7 @@ def extract_ctes(sql: str) -> gen[CTE]:
                     )
                 ),
             )
+
+
+def glot_body(sql: str) -> SQL:
+    raise RuntimeError("??? - glot_body")
