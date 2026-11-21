@@ -7,4 +7,5 @@ RUN apt update \
        npm \
    && apt -q remove -y python python3 \
    && apt -q clean \
-   && rm -rf /var/lib/apt/lists/*
+   && rm -rf /var/lib/apt/lists/* \
+   && sudo npm i -g npx
