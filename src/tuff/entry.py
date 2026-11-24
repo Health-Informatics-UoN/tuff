@@ -19,6 +19,7 @@ entry point and main code to do the things
 
 """
 
+import hashlib
 import subprocess
 import sys
 from collections.abc import Callable as call
@@ -148,34 +149,21 @@ def diff(config: Config) -> None:
             continue
 
         # difference can be stripped away
-        if good.strip() == text.strip():
-            if config.auto_strip:
-                src.write_text(good)
-                config.log(src, "overwrote a .strip() difference")
-                config.cache.cache_clear()
-            else:
-                config.log(
-                    src,
-                    "the only differences can be erased with .strip()",
-                )
+        if good.strip() == text.strip() and config.auto_strip:
+            src.write_text(good)
+            config.log(src, "overwrote a .strip() difference")
+            config.cache.cache_clear()
             continue
 
         # strip comments and compare that
         if (
             clean.strip_sql_comments(good).strip()
             == clean.strip_sql_comments(text).strip()
-        ):
-            if config.auto_comment:
-                src.write_text(good)
-                config.log(src, "overwrote a comment difference")
-                config.cache.cache_clear()
-            else:
-                config.log(
-                    src,
-                    "files have different comments",
-                )
+        ) and config.auto_comment:
+            src.write_text(good)
+            config.log(src, "overwrote a comment difference")
+            config.cache.cache_clear()
             continue
-        import hashlib
 
         temp: Path = (
             config.root
