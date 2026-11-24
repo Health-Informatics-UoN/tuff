@@ -62,7 +62,7 @@ def test_strip_comments():
         + "\n"
     )
 
-    config = entry.Config(None, None)
+    # config = entry.Config(None, None)
 
     obtained = clean.strip_sql_comments(original)
 

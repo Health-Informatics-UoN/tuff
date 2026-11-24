@@ -18,7 +18,6 @@
 
 import functools
 from collections.abc import Callable as call
-from collections.abc import Generator as gen
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,13 +25,13 @@ import sqlglot
 
 
 @dataclass(frozen=True)
-class CachedCTE:
+class SQLFragment:
     note: str
     body: str
     uses: tuple[str, ...]
 
 
-def cache() -> call[[Path], CachedCTE]:
+def cache() -> call[[Path], SQLFragment]:
     """given a file, load it as .sql and split up the query into;
     - note; leading comment block
     - uses; names of any/all CTE
@@ -42,72 +41,13 @@ def cache() -> call[[Path], CachedCTE]:
     """
 
     @functools.cache
-    def cte_cache(file: Path) -> CachedCTE:
+    def cte_cache(file: Path) -> SQLFragment:
         try:
-            full = (file).read_text()
-            main = glot_body(full)
-            body = main.body
-            uses = main.uses
-            note = ""
-            for line in main.note.splitlines():
-                line = line.strip()
-                if not line.startswith("--"):
-                    break
-                note += ("-- " + line[2:].strip()).strip() + "\n"
-            return CachedCTE(note.strip(), body, uses)
+            return glot_body((file).read_text())
         except Exception as ae:
             raise RuntimeError(f"in {file=}") from ae
 
     return cte_cache
-
-
-@dataclass(frozen=True)
-class SQLFragment:
-    note: str | None
-    body: str
-    uses: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class CTE:
-    name: str
-    note: str | None
-    body: str
-    uses: tuple[str, ...]
-
-
-def glot_ctes(sql: str) -> gen[CTE]:
-    with_clause = sqlglot.parse_one(sql, read="tsql").args.get("with_")
-
-    if with_clause is None:
-        pass
-    elif isinstance(with_clause, sqlglot.exp.With):
-        for cte in with_clause.expressions:
-            body = cte.this.sql(pretty=True, dialect="tsql").splitlines()
-            note = []
-            while body and body[0].startswith("/*"):
-                assert body[0].endswith("*/")
-                note.append(
-                    body[0]
-                    .removeprefix("/*")
-                    .removeprefix(" ")
-                    .removesuffix("*/")
-                    .removesuffix(" ")
-                )
-                body = body[1:]
-
-            yield CTE(
-                cte.alias_or_name,
-                None if not note else "\n".join(f"-- {n}" for n in note),
-                "\n".join(body) + "\n",
-                tuple(
-                    sorted(
-                        {table.name for table in cte.this.find_all(sqlglot.exp.Table)}
-                    )
-                ),
-            )
-    else:
-        raise TypeError
 
 
 def glot_body(sql: str) -> SQLFragment:
