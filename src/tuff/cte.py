@@ -19,8 +19,11 @@
 import functools
 import re
 from collections.abc import Callable as call
+from collections.abc import Generator as gen
 from dataclasses import dataclass
 from pathlib import Path
+import sqlglot
+
 import sqlglot
 
 
@@ -82,3 +85,52 @@ def drop_cte(src) -> str:
                 out = line + "\n"
     assert out is not None
     return out
+
+
+@dataclass(frozen=True)
+class SQL:
+    note: str | None
+    body: str
+    uses: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CTE:
+    name: str
+    note: str | None
+    body: str
+    uses: tuple[str, ...]
+
+
+def glot_ctes(sql: str) -> gen[CTE]:
+    with_clause = sqlglot.parse_one(sql, read="tsql").args.get("with_")
+
+    if isinstance(with_clause, sqlglot.exp.With):
+        for cte in with_clause.expressions:
+            body = cte.this.sql(pretty=True, dialect="tsql").splitlines()
+            note = []
+            while body and body[0].startswith("/*"):
+                assert body[0].endswith("*/")
+                note.append(
+                    body[0]
+                    .removeprefix("/*")
+                    .removeprefix(" ")
+                    .removesuffix("*/")
+                    .removesuffix(" ")
+                )
+                body = body[1:]
+
+            yield CTE(
+                cte.alias_or_name,
+                None if not note else "\n".join(f"-- {n}" for n in note),
+                "\n".join(body) + "\n",
+                tuple(
+                    sorted(
+                        {table.name for table in cte.this.find_all(sqlglot.exp.Table)}
+                    )
+                ),
+            )
+
+
+def glot_body(sql: str) -> SQL:
+    raise RuntimeError("??? - glot_body")

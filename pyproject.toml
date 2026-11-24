@@ -3,8 +3,11 @@ name = "tuff"
 version = "0.1.0"
 description = "an SQL-CTE linter/inspector"
 readme = "README.md"
-requires-python = ">=3.9,<3.10"
-dependencies = ["sqlglot>=30.31.0"]
+requires-python = ">=3.10"
+dependencies = [
+    "pre-commit>=4.6.2",
+    "sqlglot>=30.33.0",
+]
 
 [project.scripts]
 tuff = "tuff:main"
@@ -14,7 +17,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pytest>=8.4.2", "pytest-cov>=7.1.0", "ruff>=0.17.5"]
-
-[tool.coverage.run]
-omit = ["tests/*", "*/__init__.py"]
+dev = [
+    "pytest>=8.4.2",
+    "ruff>=0.17.6",
+    "pytest-cov>=7.1.0",
+]
