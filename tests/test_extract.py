@@ -137,10 +137,11 @@ def test_body_with_CTEs():
         "so - yeah",
         textwrap.dedent(
             """
-            SELECT *
+            SELECT
+              *
             FROM third_cte
             """
-        ),
+        ).strip(),
         ("third_cte",),
     )
     obtained = cte.glot_body(sql)

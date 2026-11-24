@@ -16,7 +16,9 @@
 
 import textwrap
 from pathlib import Path
+
 import pytest
+
 from tuff import cte
 
 test_data = Path(__file__).parent / "test_data" / __name__
@@ -26,10 +28,10 @@ def test_cte_names():
     obtained = list(cte.find_cte((test_data / "with-some-cte.sql").read_text()))
     expected = sorted(
         [
-            "MonthlySales",
-            "CustomerTrends",
             "CustomerSummary",
+            "CustomerTrends",
             "EnrichedCustomers",
+            "MonthlySales",
         ]
     )
 
@@ -37,7 +39,6 @@ def test_cte_names():
 
 
 def test_drop_cte():
-    obtained = cte.drop_cte((test_data / "with-some-cte.sql").read_text())
     expected = textwrap.dedent(
         """
         SELECT
@@ -57,8 +58,8 @@ def test_drop_cte():
             ec.CompanyName
         """
     )
-
-    assert obtained.strip() == expected.strip()
+    obtained = cte.glot_body((test_data / "with-some-cte.sql").read_text())
+    assert obtained.body == expected.strip()
 
 
 def test_cache(tmp_path):
@@ -97,9 +98,6 @@ def test_cache(tmp_path):
         val = cache(file)
 
     assert f"in {file=}" == str(re.value)
-
-
-import sqlglot
 
 
 def glot_uses(sql: str) -> list[str]:

@@ -45,10 +45,11 @@ def cache() -> call[[Path], CachedCTE]:
     def cte_cache(file: Path) -> CachedCTE:
         try:
             full = (file).read_text()
-            body = drop_cte(full).strip()
-            uses = sorted(find_cte(full))
+            main = glot_body(full)
+            body = main.body
+            uses = main.uses
             note = ""
-            for line in full.splitlines():
+            for line in main.note.splitlines():
                 line = line.strip()
                 if not line.startswith("--"):
                     break
@@ -58,31 +59,6 @@ def cache() -> call[[Path], CachedCTE]:
             raise RuntimeError(f"in {file=}") from ae
 
     return cte_cache
-
-
-def find_cte(src: str):
-    yield from sorted(
-        [cte.alias_or_name for cte in sqlglot.parse_one(src, read="tsql").ctes]
-    )
-
-
-def drop_cte(src) -> str:
-    out = None
-    for line in src.splitlines():
-        if out is not None:
-            out += line + "\n"
-        else:
-            if "--" in line:
-                text = line[: line.find("--")]
-            else:
-                text = line
-            if text.startswith("SELECT"):
-                assert text.startswith("SELECT ") or text.strip() == "SELECT", (
-                    f"{text=}"
-                )
-                out = line + "\n"
-    assert out is not None
-    return out
 
 
 @dataclass(frozen=True)
@@ -135,19 +111,48 @@ def glot_ctes(sql: str) -> gen[CTE]:
 
 
 def glot_body(sql: str) -> SQLFragment:
+    """using SQLGlot extract the body, uses and header comments / notes"""
     parsed = sqlglot.parse_one(sql, read="tsql")
 
-    ctes = parsed.args.get("with_")
-    if ctes is not None:
+    # collect the comments before the WITH statement
+    comments = None
+    used: dict[str, list[str]] = {}
+    if ctes := parsed.args.get("with_"):
         comments = ctes.comments
-    else:
-        comments = []
-    comments = comments + parsed.comments
 
+        for cte in ctes.expressions:
+            assert cte.alias not in used
+            used[cte.alias] = [table.name for table in cte.find_all(sqlglot.exp.Table)]
+
+        # remove the with statement
+        parsed.args.pop("with_")
+
+    # add in comments on the main statement
+    comments = ([] if comments is None else comments) + parsed.comments
+
+    # we removed with, so, any remaining tables are things we're really looking at
+    uses = loop(used, [table.name for table in parsed.find_all(sqlglot.exp.Table)])
+
+    # remove the comments now, then, pretty print the body
     parsed.comments = []
+    body = parsed.sql(pretty=True, dialect="tsql")
 
+    # pack the result into the fragment
     return SQLFragment(
         note="\n".join(c.strip() for c in comments),
-        body=parsed.sql(pretty=True, dialect="tsql").strip(),
-        uses=tuple(sorted(table.name for table in parsed.find_all(sqlglot.exp.Table))),
+        body=body.strip(),
+        uses=tuple(uses),
     )
+
+
+def loop(used: dict[str, list[str]], todo: list[str]):
+    seen = []
+    while todo:
+        head = todo[0]
+        todo = todo[1:]
+
+        if head not in seen:
+            seen.append(head)
+
+            yield head
+            todo += used.get(head, [])
