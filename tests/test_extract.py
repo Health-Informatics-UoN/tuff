@@ -106,7 +106,7 @@ def test_extract_cte():
     ]
 
 
-def test_extract_body():
+def test_body_with_CTEs():
 
     sql = """
     -- so - yeah
@@ -133,7 +133,7 @@ def test_extract_body():
     FROM third_cte;
     """
 
-    expected = cte.SQL(
+    expected = cte.SQLFragment(
         "so - yeah",
         textwrap.dedent(
             """
@@ -142,6 +142,30 @@ def test_extract_body():
             """
         ),
         ("third_cte",),
+    )
+    obtained = cte.glot_body(sql)
+
+    assert obtained == expected
+
+
+def test_body_no_CTEs():
+
+    sql = """
+    -- so - yeah
+    SELECT *
+    FROM some_table;
+    """
+
+    expected = cte.SQLFragment(
+        "so - yeah",
+        textwrap.dedent(
+            """
+            SELECT
+              *
+            FROM some_table
+            """
+        ).strip(),
+        ("some_table",),
     )
     obtained = cte.glot_body(sql)
 

@@ -17,12 +17,10 @@
 """functions for manipulating/extracting/removing the CTE section of queries"""
 
 import functools
-import re
 from collections.abc import Callable as call
 from collections.abc import Generator as gen
 from dataclasses import dataclass
 from pathlib import Path
-import sqlglot
 
 import sqlglot
 
@@ -88,7 +86,7 @@ def drop_cte(src) -> str:
 
 
 @dataclass(frozen=True)
-class SQL:
+class SQLFragment:
     note: str | None
     body: str
     uses: tuple[str, ...]
@@ -105,7 +103,9 @@ class CTE:
 def glot_ctes(sql: str) -> gen[CTE]:
     with_clause = sqlglot.parse_one(sql, read="tsql").args.get("with_")
 
-    if isinstance(with_clause, sqlglot.exp.With):
+    if with_clause is None:
+        pass
+    elif isinstance(with_clause, sqlglot.exp.With):
         for cte in with_clause.expressions:
             body = cte.this.sql(pretty=True, dialect="tsql").splitlines()
             note = []
@@ -130,7 +130,24 @@ def glot_ctes(sql: str) -> gen[CTE]:
                     )
                 ),
             )
+    else:
+        raise TypeError
 
 
-def glot_body(sql: str) -> SQL:
-    raise RuntimeError("??? - glot_body")
+def glot_body(sql: str) -> SQLFragment:
+    parsed = sqlglot.parse_one(sql, read="tsql")
+
+    ctes = parsed.args.get("with_")
+    if ctes is not None:
+        comments = ctes.comments
+    else:
+        comments = []
+    comments = comments + parsed.comments
+
+    parsed.comments = []
+
+    return SQLFragment(
+        note="\n".join(c.strip() for c in comments),
+        body=parsed.sql(pretty=True, dialect="tsql").strip(),
+        uses=tuple(sorted(table.name for table in parsed.find_all(sqlglot.exp.Table))),
+    )

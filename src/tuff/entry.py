@@ -22,7 +22,9 @@ entry point and main code to do the things
 import hashlib
 import subprocess
 import sys
+import textwrap
 from collections.abc import Callable as call
+from collections.abc import Generator as gen
 from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
@@ -198,8 +200,6 @@ def diff(config: Config) -> None:
     print("<<< ... done!")
 
 
-import textwrap
-
 expected_header = (
     textwrap.dedent(
         """
@@ -243,23 +243,34 @@ def code_diff(expect: Path, actual: Path):
     )
 
 
-def build(config, seen: list[str], need: list[str]):
+def build(config, seen: list[str], need: list[str]) -> gen[str]:
+    """yields all CTEs in the need list, and all they need, in the order they're needed in"""
+
+    # update the list of need'ed CTE
     need = [each for each in need if each not in seen]
+
+    # if there's nothing left to do, return
     if not need:
         return
 
-    head = need[0]
+    # we'll process this CTE next
+    name = need[0]
 
-    self = config.cache(config.root / "sql/cte" / (head + ".sql"))
+    self = config.cache(config.root / "sql/cte" / (name + ".sql"))
 
-    uses = [each for each in sorted(self.uses) if each not in seen]
-    if not uses:
-        code = f"  {head} AS (\n"
+    # sort the list of other CTEs that our CTE needs
+    uses = sorted(each for each in self.uses if each not in seen)
+    if uses:
+        # if there are CTEs that we need (and haven't loaded) add them to the front of the list so they'll be looked up first
+        # ... this breaks infinite loops as long as the CTEs themselves aren't circular
+        yield from build(config, seen, uses + need)
+    else:
+        # all CTEs we need have been loaded; yield this CTE
+        code = f"  {name} AS (\n"
         for each in (self.note + "\n" + self.body).strip().splitlines():
             code += f"    {each}\n"
         code += "  )"
-
         yield code
-        yield from build(config, seen + [head], need)
-    else:
-        yield from build(config, seen, uses + need)
+
+        # now continue, adding this CTE to the list of ones that are done
+        yield from build(config, seen + [name], need)
