@@ -47,20 +47,19 @@ def test_drop_cte():
     expected = textwrap.dedent(
         """
         SELECT
-            ec.CustomerTier,
-            ec.CompanyName,
-            ec.Country,
-            ec.ActiveMonths,
-            ec.TotalOrders,
-            FORMAT(ec.TotalRevenue, 'C', 'en-US') AS TotalRevenue,
-            FORMAT(ec.AvgMonthlyRevenue, 'C', 'en-US') AS AvgMonthlyRevenue
-        FROM
-            EnrichedCustomers AS ec
+          ec.CustomerTier,
+          ec.CompanyName,
+          ec.Country,
+          ec.ActiveMonths,
+          ec.TotalOrders,
+          FORMAT(ec.TotalRevenue, 'C', 'en-US') AS TotalRevenue,
+          FORMAT(ec.AvgMonthlyRevenue, 'C', 'en-US') AS AvgMonthlyRevenue
+        FROM EnrichedCustomers AS ec
         WHERE
-            ec.ActiveMonths >= 3 -- ignore one-off buyers
+          ec.ActiveMonths >= 3 /* ignore one-off buyers */
         ORDER BY
-            ec.TotalRevenue DESC,
-            ec.CompanyName
+          ec.TotalRevenue DESC,
+          ec.CompanyName
         """
     )
     obtained = cte.glot_body((test_data / "with-some-cte.sql").read_text())
