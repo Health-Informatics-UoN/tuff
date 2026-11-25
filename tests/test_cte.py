@@ -75,36 +75,51 @@ def test_cache(tmp_path):
 
     config = entry.Config(None)
 
-    cache = lambda p: config.cache(p)
+    # load the file/value normally
+    val1 = config.cache(file)
 
-    val = cache(file)
+    assert (
+        val1.note == "Final SELECT: pull the report"
+    )  # the note is not actually at the head; it'll be moved there
+    assert val1.uses == tuple(
+        sorted(
+            [
+                "Customers",
+                "Orders",
+                "CustomerSummary",
+                "CustomerTrends",
+                "EnrichedCustomers",
+                "MonthlySales",
+            ]
+        )
+    )
 
-    assert val.note == ""
-    assert val.uses == [
-        "CustomerSummary",
-        "CustomerTrends",
-        "EnrichedCustomers",
-        "MonthlySales",
-    ]
-
+    # remove the file so that the cache needs to reload it
     file.unlink()
-
     assert not file.is_file()
+    val2 = config.cache(file)
 
-    val = cache(file)
+    assert val2.note == "Final SELECT: pull the report"
+    assert val2.uses == tuple(
+        sorted(
+            [
+                "Customers",
+                "Orders",
+                "CustomerSummary",
+                "CustomerTrends",
+                "EnrichedCustomers",
+                "MonthlySales",
+            ]
+        )
+    )
 
-    assert val.note == ""
-    assert val.uses == [
-        "CustomerSummary",
-        "CustomerTrends",
-        "EnrichedCustomers",
-        "MonthlySales",
-    ]
+    assert val1 == val2
 
-    cache.cache_clear()
-
+    # check that clearing the cache and calling again DOES now raise an error
+    config.cache.cache_clear()
     with pytest.raises(RuntimeError) as re:
-        val = cache(file)
+        val3 = config.cache(file)
+        assert False, f"cache should have failed, but, it returned {val3=}"
 
     assert f"in {file=}" == str(re.value)
 

@@ -49,7 +49,7 @@ class Config:
     # cache to prevent emitting the same message more than twice
     _seen: dict[str, bool] = field(default_factory=dict)
 
-    @property
+    @functools.cached_property
     def cache(self) -> call[[Path], cte.SQLBody]:
         @functools.cache
         def cache(file: Path) -> cte.SQLBody:
