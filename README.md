@@ -8,17 +8,16 @@ It's really crude.
 You can invoke it with [uvx](https://docs.astral.sh/uv/guides/tools/) like this ...
 
 ```bash
-uvx --from git+https://codeberg.org/paintgoblin/tuff.git tuff
+uvx --from git+https://github.com/Health-Informatics-UoN/tuff.git tuff
 ```
 
 You can clone it and run from that as well ...
 
 ```bash
-git clone https://codeberg.org/paintgoblin/tuff.git ~/Documents/tuff
+git clone https://github.com/Health-Informatics-UoN/tuff.git ~/Documents/tuff
 
 uv --project ~/Documents/tuff run tuff
 ```
-
 
 ## Needs
 
@@ -40,7 +39,7 @@ Provide a command to run with `uvx <command>`.
 See `uvx --help` for more information.
 
 
-$ uvx --from git+https://codeberg.org/paintgoblin/tuff.git tuff
+$ uvx --from git+https://github.com/Health-Informatics-UoN/tuff.git tuff
 ```
 
 ## Does
@@ -58,12 +57,11 @@ $ uvx --from git+https://codeberg.org/paintgoblin/tuff.git tuff
 - detect usage things
   - when the body queries from a CTE name
   - when the body defined a CTE name
-- sqlfluff linting - and more?
+- sql-fluff linting
 - sql-formatter running from python as well
+  - ... or faster invoke of the npx version
 - read/save settings from .vscode file
-- detect / complain about nested-CTEs using sql-glot
-  - ... maybe just switch to that instead of the string matching
 - pre-commit job
-- dump/copy CTEs with their deps
+  - for folder; allow these non-CTEs, then, verify all queries and CTEs are up to date
 - prepare/show "live queries" that replace specific CTEs (so ... sql/cte/live/?)
 - convert to a vscode extension
