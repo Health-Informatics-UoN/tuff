@@ -25,13 +25,13 @@ import sqlglot
 
 
 @dataclass(frozen=True)
-class SQLFragment:
+class SQLBody:
     note: str
     body: str
     uses: tuple[str, ...]
 
 
-def cache() -> call[[Path], SQLFragment]:
+def cache() -> call[[Path], SQLBody]:
     """given a file, load it as .sql and split up the query into;
     - note; leading comment block
     - uses; names of any/all CTE
@@ -41,7 +41,7 @@ def cache() -> call[[Path], SQLFragment]:
     """
 
     @functools.cache
-    def cte_cache(file: Path) -> SQLFragment:
+    def cte_cache(file: Path) -> SQLBody:
         try:
             return glot_body((file).read_text())
         except Exception as ae:
@@ -50,7 +50,7 @@ def cache() -> call[[Path], SQLFragment]:
     return cte_cache
 
 
-def glot_body(sql: str) -> SQLFragment:
+def glot_body(sql: str) -> SQLBody:
     """using SQLGlot extract the body, uses and header comments / notes"""
     parsed = sqlglot.parse_one(sql, read="tsql")
 
@@ -78,7 +78,7 @@ def glot_body(sql: str) -> SQLFragment:
     body = parsed.sql(pretty=True, dialect="tsql")
 
     # pack the result into the fragment
-    return SQLFragment(
+    return SQLBody(
         note="\n".join(c.strip() for c in comments),
         body=body.strip(),
         uses=tuple(uses),

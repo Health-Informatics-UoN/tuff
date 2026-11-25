@@ -36,7 +36,7 @@ from tuff import clean, cte
 class Config:
     root: Path
 
-    cache: call[[Path], cte.SQLFragment]
+    cache: call[[Path], cte.SQLBody]
 
     # -no-npx; don't invoke the npx steps (and save time)
     no_npx: bool = False

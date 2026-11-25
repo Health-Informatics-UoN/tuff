@@ -32,7 +32,7 @@ def test_body_with_CTEs():
     FROM third_cte;
     """
 
-    expected = cte.SQLFragment(
+    expected = cte.SQLBody(
         "so - yeah",
         textwrap.dedent(
             """
@@ -56,7 +56,7 @@ def test_body_no_CTEs():
     FROM some_table;
     """
 
-    expected = cte.SQLFragment(
+    expected = cte.SQLBody(
         "so - yeah",
         textwrap.dedent(
             """
