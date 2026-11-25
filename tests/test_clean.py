@@ -18,7 +18,7 @@ def test_full_and_slow():
 
     original = "seLect foor From bar"
 
-    config = entry.Config(None, None)
+    config = entry.Config(None)
 
     obtained = clean.default_format(config, original)
 
@@ -30,7 +30,7 @@ def test_fast_but_useless():
 
     original = "   seLect foor From bar"
 
-    config = entry.Config(None, None, no_npx=True)
+    config = entry.Config(None, no_npx=True)
 
     obtained = clean.default_format(config, original)
 
@@ -62,7 +62,7 @@ def test_strip_comments():
         + "\n"
     )
 
-    # config = entry.Config(None, None)
+    # config = entry.Config(None)
 
     obtained = clean.strip_sql_comments(original)
 

@@ -16,12 +16,24 @@
 
 """functions for manipulating/extracting/removing the CTE section of queries"""
 
-import functools
-from collections.abc import Callable as call
+from collections.abc import (
+    Collection as collection,
+)
+from collections.abc import (
+    Generator as gen,
+)
+from collections.abc import (
+    Iterable as iterable,
+)
+from collections.abc import (
+    Mapping as mapping,
+)
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TypeVar
 
 import sqlglot
+
+E = TypeVar("E")
 
 
 @dataclass(frozen=True)
@@ -31,27 +43,15 @@ class SQLBody:
     uses: tuple[str, ...]
 
 
-def cache() -> call[[Path], SQLBody]:
-    """given a file, load it as .sql and split up the query into;
-    - note; leading comment block
-    - uses; names of any/all CTE
-    - body; the main SQL SELECT statement
+def glot_body(sql: str) -> SQLBody:
+    """given sql code as text - parse/extract just the "body" discarding all CTEs
+
+    - reformats the "main body" of the query (turns it to an AST the recreates it)
+    - keeps any comments at the top of the file and combines them with ones from the query
+    - scans for CTEs we use and our CTEs used (... or should we only do ones we directly use?)
 
     ... will strip comments between CTE sections ... but that's okay?
     """
-
-    @functools.cache
-    def cte_cache(file: Path) -> SQLBody:
-        try:
-            return glot_body((file).read_text())
-        except Exception as ae:
-            raise RuntimeError(f"in {file=}") from ae
-
-    return cte_cache
-
-
-def glot_body(sql: str) -> SQLBody:
-    """using SQLGlot extract the body, uses and header comments / notes"""
     parsed = sqlglot.parse_one(sql, read="tsql")
 
     # collect the comments before the WITH statement
@@ -71,7 +71,9 @@ def glot_body(sql: str) -> SQLBody:
     comments = ([] if comments is None else comments) + parsed.comments
 
     # we removed with, so, any remaining tables are things we're really looking at
-    uses = loop(used, [table.name for table in parsed.find_all(sqlglot.exp.Table)])
+    uses = transitive_listing(
+        used, [table.name for table in parsed.find_all(sqlglot.exp.Table)]
+    )
 
     # remove the comments now, then, pretty print the body
     parsed.comments = []
@@ -85,14 +87,15 @@ def glot_body(sql: str) -> SQLBody:
     )
 
 
-def loop(used: dict[str, list[str]], todo: list[str]):
-    seen = []
+def transitive_listing(used: mapping[E, collection[E]], todo: iterable[E]) -> gen[E]:
+    """given a full dict @used, for each entry in @todo; yield that entry and any entries it uses"""
+    seen: set[E] = set()
     while todo:
         head = todo[0]
         todo = todo[1:]
 
         if head not in seen:
-            seen.append(head)
+            seen.add(head)
 
             yield head
             todo += used.get(head, [])

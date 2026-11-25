@@ -19,6 +19,7 @@ entry point and main code to do the things
 
 """
 
+import functools
 import hashlib
 import subprocess
 import sys
@@ -36,8 +37,6 @@ from tuff import clean, cte
 class Config:
     root: Path
 
-    cache: call[[Path], cte.SQLBody]
-
     # -no-npx; don't invoke the npx steps (and save time)
     no_npx: bool = False
 
@@ -49,6 +48,17 @@ class Config:
 
     # cache to prevent emitting the same message more than twice
     _seen: dict[str, bool] = field(default_factory=dict)
+
+    @property
+    def cache(self) -> call[[Path], cte.SQLBody]:
+        @functools.cache
+        def cache(file: Path) -> cte.SQLBody:
+            try:
+                return cte.glot_body((file).read_text())
+            except Exception as ae:
+                raise RuntimeError(f"in {file=}") from ae
+
+        return cache
 
     def log(self, file: Path, *lines: str):
         if not lines:
@@ -84,7 +94,7 @@ def launch(cwd: Path, args: list[str]):
     if 0 == len(list((cwd / "sql").glob("*.sql"))):
         sys.exit(f"no sql/*.sql in --> {cwd} <")
 
-    config = Config(cwd, cte.cache())
+    config = Config(cwd)
 
     config.no_npx = take_arg(args, "-no-npx")
     config.auto_strip = take_arg(args, "-auto-strip")

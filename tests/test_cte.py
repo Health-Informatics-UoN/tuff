@@ -67,11 +67,16 @@ def test_drop_cte():
     assert obtained.body == expected.strip()
 
 
+from tuff import entry
+
+
 def test_cache(tmp_path):
     file = tmp_path / "query.sql"
     file.write_text((test_data / "with-some-cte.sql").read_text())
 
-    cache = cte.cache()
+    config = entry.Config(None)
+
+    cache = lambda p: config.cache(p)
 
     val = cache(file)
 

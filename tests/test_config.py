@@ -4,7 +4,7 @@ from tuff import entry
 
 
 def test_log(capsys, tmp_path):
-    config = entry.Config(None, None)
+    config = entry.Config(None)
 
     config.log(tmp_path, "foo")
     config.log(tmp_path, "foo")
@@ -15,8 +15,10 @@ def test_log(capsys, tmp_path):
     captured = capsys.readouterr()
 
     # Test the captured output, both std and err
-    assert captured.out.strip() == textwrap.dedent(
-        f"""
+    assert (
+        captured.out.strip()
+        == textwrap.dedent(
+            f"""
         ; {str(tmp_path)[1:]}
         foo
 
@@ -27,5 +29,6 @@ def test_log(capsys, tmp_path):
         ; {str(tmp_path)[1:]}
         bar
         """
-    ).strip()
+        ).strip()
+    )
     assert captured.err == ""
