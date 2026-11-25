@@ -1,5 +1,6 @@
-from tuff import entry
 from pathlib import Path
+
+from tuff import entry
 
 
 def test_take_args():
@@ -73,3 +74,9 @@ def test_weird_param(tmp_path: Path):
         entry.launch(tmp_path, ["-foo"])
     except SystemExit as e:
         assert "parameters unknown=['-foo']" == str(e)
+
+
+def test_diff(tmp_path: Path):
+    raise RuntimeError(
+        "run a test of the diff() entry point with a monkey-patched Config to check what's invoked and logged"
+    )

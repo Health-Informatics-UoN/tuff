@@ -79,6 +79,16 @@ class Config:
         # print the message
         print(name + full + "\n")
 
+    def run(self, *args: Path | str):
+        subprocess.run(
+            args,
+            check=True,
+            cwd=self.root,
+        )
+
+    def write_sql(self, path: Path, text: str):
+        path.write_text(text.strip() + "\n")
+
 
 def launch(cwd: Path, args: list[str]):
 
@@ -119,12 +129,13 @@ def take_arg(args, key: str):
         return False
 
 
-def diff(config: Config) -> None:
-    print(f">> running tuff in {config.root}\n")
+def diff(config: Config, todo: list[Path] | None = None) -> None:
+    config.log(config.root, f">> running tuff in {config.root}\n")
 
-    todo = []
-    todo += sorted(each for each in (config.root / "sql/cte").glob("*.sql"))
-    todo += sorted(each for each in (config.root / "sql/").glob("*.sql"))
+    if todo is None:
+        todo = []
+        todo += sorted(each for each in (config.root / "sql/cte").glob("*.sql"))
+        todo += sorted(each for each in (config.root / "sql/").glob("*.sql"))
 
     @cache
     def read_cte(src: Path) -> tuple[cte.CTE, ...]:
@@ -222,39 +233,34 @@ expected_header = (
 )
 
 
-def code_diff(expect: Path, actual: Path):
+def code_diff(config: Config, expect: Path, actual: Path):
     """use vscode's diff tool (which always returns 0)"""
 
     # remove the marker from the actual file
-    actual.write_text(
+    config.write_sql(
+        actual,
         actual.read_text()
         .strip()
         .removeprefix(expected_header)
-        .removeprefix(expected_header.strip())
-        .strip()
-        + "\n"
+        .removeprefix(expected_header.strip()),
     )
+
     # remove/add the marker to the expected file
-    expect.write_text(
+    config.write_sql(
+        expect,
         expected_header
         + expect.read_text()
         .strip()
         .removeprefix(expected_header)
-        .removeprefix(expected_header.strip())
-        .strip()
-        + "\n"
+        .removeprefix(expected_header.strip()),
     )
 
-    subprocess.run(
-        # ["code", "--wait", "-d", expect, actual],
-        # don't bother waiting - just toss up all the different files in one blast
-        ["code", "-d", expect, actual],
-        check=True,
-    )
+    # don't bother waiting - just toss up all the different files in one blast
+    config.run("code", "-d", expect, actual)
 
 
 def build(config, seen: list[str], need: list[str]) -> gen[str]:
-    """yields all CTEs in the need list, and all they need, in the order they're needed in"""
+    """runs a loop to recursively build a list of full qu"""
 
     # update the list of need'ed CTE
     need = [each for each in need if each not in seen]
@@ -265,6 +271,10 @@ def build(config, seen: list[str], need: list[str]) -> gen[str]:
 
     # we'll process this CTE next
     name = need[0]
+
+    # TODO; check for view-tables we are allowed?
+
+    # TODO; check if there's a CTE or not
 
     self = config.cache(config.root / "sql/cte" / (name + ".sql"))
 
