@@ -25,15 +25,20 @@ test_data = Path(__file__).parent / "test_data" / __name__
 
 
 def test_cte_names():
-    obtained = list(cte.find_cte((test_data / "with-some-cte.sql").read_text()))
+    source = (test_data / "with-some-cte.sql").read_text()
     expected = sorted(
         [
             "CustomerSummary",
             "CustomerTrends",
             "EnrichedCustomers",
             "MonthlySales",
+            "Orders",  # a real table that we'll pickup anyway
+            "Customers",  # a real table that we'll pickup anyway
         ]
     )
+
+    sql_body = cte.glot_body(source)
+    obtained = sorted(sql_body.uses)
 
     assert obtained == expected
 
