@@ -71,8 +71,10 @@ def glot_body(sql: str) -> SQLBody:
     comments = ([] if comments is None else comments) + parsed.comments
 
     # we removed with, so, any remaining tables are things we're really looking at
-    uses = transitive_listing(
-        used, [table.name for table in parsed.find_all(sqlglot.exp.Table)]
+    uses = sorted(
+        transitive_listing(
+            used, [table.name for table in parsed.find_all(sqlglot.exp.Table)]
+        )
     )
 
     # remove the comments now, then, pretty print the body

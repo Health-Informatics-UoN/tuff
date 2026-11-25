@@ -41,7 +41,17 @@ def test_body_with_CTEs():
             FROM third_cte
             """
         ).strip(),
-        ("third_cte",),
+        tuple(
+            sorted(
+                [
+                    "second_cte",
+                    "orders",
+                    "users",
+                    "first_cte",
+                    "third_cte",
+                ]
+            )
+        ),
     )
     obtained = cte.glot_body(sql)
 
